@@ -178,7 +178,6 @@ Typical automation flow:
 7. Safe remediation (rerun/clear) if allowed by policy
 ---
 ## Sample RCA Output
-```text
 ## Root Cause: Databricks job failed due to schema drift
 ### Details:
 • Column `amount` expected DOUBLE but received STRING
@@ -191,4 +190,3 @@ Typical automation flow:
 • Add schema validation step
 • Apply safe casting: CAST(amount AS DOUBLE)
 • Rerun failed tasks only
-```
