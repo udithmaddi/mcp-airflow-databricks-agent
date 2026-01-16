@@ -178,11 +178,17 @@ Typical automation flow:
 7. Safe remediation (rerun/clear) if allowed by policy
 ---
 ## Sample RCA Output
-**Root Cause:**
-Databricks job failed due to schema drift.
-**Details:**
-Column amount expected DOUBLE but received STRING in source.
-**Impact:**
-Gold table refresh failed. Dashboards may show stale data.
-**Suggested Fix:**
-Update schema validation or apply casting and rerun failed tasks.
+```text
+## Root Cause: Databricks job failed due to schema drift
+### Details:
+• Column `amount` expected DOUBLE but received STRING
+• Source: s3://raw-data/transactions/
+• Timestamp: 2026-01-16 14:30:15
+### Impact:
+• Gold table refresh failed
+• Dashboards showing stale data
+### Suggested Fix:
+• Add schema validation step
+• Apply safe casting: CAST(amount AS DOUBLE)
+• Rerun failed tasks only
+```
