@@ -3,6 +3,7 @@
 This project builds a **GenAI DataOps Assistant** using an **MCP Server (Model Context Protocol)** to connect AI agents (Claude Desktop / other MCP clients) with real Data Engineering platforms like:
 - **Apache Airflow**
 - **Databricks Jobs**
+  
 The goal is to enable:
 - Pipeline Monitoring
 - Failure Detection
