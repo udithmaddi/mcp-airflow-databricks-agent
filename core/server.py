@@ -5,44 +5,39 @@ import os
 from typing import Any
 
 # ==============================================================================
-# MCP SERVER ENTRY POINT
-# This file is the "Main Door" of the application.
-# It connects the AI (Claude) to our Python tools.
+# 🎤 PRESENTATION NOTE: THE "FRONT DOOR"
+# This file (`server.py`) is the main entry point.
+# It connects the Artificial Intelligence (Claude) to our Code.
+# It listens for commands like "Run SQL" or "Check Logs".
 # ==============================================================================
 
-# 1. SETUP PATHS
-# We need to make sure Python sees our local files (like tools.py).
+# 1. SETUP: Make sure we can see our own tools
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 import mcp.types as types
-import tools  # Import our actual code from tools.py
+import tools  # This is where our actual features live
 
-# 2. INITIALIZE SERVER
-# Give the server a name so the AI knows who it is talking to.
+# 2. INITIALIZE: Give the Assistant a Name
 app = Server("AirflowDatabricksAssistant")
 
-# 3. SETUP LOGGING
-# We log info so we can see what happens in the terminal.
+# 3. LOGGING: So we can see what's happening in the black terminal window
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mcp_server")
 
 # ==============================================================================
-# TOOL DEFINITIONS
-# Here we tell Claude: "These are the tools you can use."
+# 🛠️ TOOL DEFINITIONS (The "Menu")
+# Here we define the Menu of actions Claude is allowed to take.
+# Each tool has a Name (what to call) and inputs (what it needs).
 # ==============================================================================
 @app.list_tools()
 async def list_tools() -> list[types.Tool]:
-    """
-    Returns a list of all tools available to the AI.
-    Each tool has a Name, Description, and Input Schema (what arguments it needs).
-    """
     return [
-        # Tool 1: Get Basic Info about a DAG Run
+        # --- AIRFLOW TOOLS (Orchestration) ---
         types.Tool(
             name="airflow_get_dag_run",
-            description="Get metadata for a specific DAG run.",
+            description="🔍 Get details about a specific Pipeline run (Status, Start Time).",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -52,10 +47,9 @@ async def list_tools() -> list[types.Tool]:
                 "required": ["dag_id", "run_id"],
             },
         ),
-        # Tool 2: Find which tasks failed
         types.Tool(
             name="airflow_get_failed_tasks",
-            description="Get list of failed tasks for a DAG run.",
+            description="❌ Find out exactly WHICH tasks failed (so we don't check everything).",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -65,10 +59,9 @@ async def list_tools() -> list[types.Tool]:
                 "required": ["dag_id", "run_id"],
             },
         ),
-        # Tool 3: Get the logs (text) for a specific task
         types.Tool(
             name="airflow_get_task_log",
-            description="Get raw logs for a task.",
+            description="📄 Read the text logs from Airflow to see error messages.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -79,10 +72,9 @@ async def list_tools() -> list[types.Tool]:
                 "required": ["dag_id", "run_id", "task_id"],
             },
         ),
-        # Tool 4: Specifically extract Databricks ID from logs (Critical for RCA)
         types.Tool(
             name="airflow_extract_databricks_run_id",
-            description="Extract Databricks Run ID from a task's logs.",
+            description="🔢 Helper: Find the 'Databricks Job ID' hidden inside the text logs.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -93,10 +85,11 @@ async def list_tools() -> list[types.Tool]:
                 "required": ["dag_id", "run_id", "task_id"],
             },
         ),
-        # Tool 5: Get Databricks Error Details
-         types.Tool(
+        
+        # --- DATABRICKS TOOLS (Compute) ---
+        types.Tool(
             name="dbx_get_run_output",
-            description="Get Databricks run output/error trace.",
+            description="📉 Get specific error details from the Databricks cluster.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -105,10 +98,9 @@ async def list_tools() -> list[types.Tool]:
                 "required": ["run_id"],
             },
         ),
-        # Tool 6: Trigger a Databricks Job
         types.Tool(
             name="dbx_run_now",
-            description="Trigger a Databricks Job.",
+            description="▶️ Trigger a Databricks Job manually.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -118,10 +110,11 @@ async def list_tools() -> list[types.Tool]:
                 "required": ["job_id"],
             },
         ),
-        # Tool 7: The "Smart" Tool - Do Full RCA automatically
+
+        # --- INTELLIGENT AGENT TOOLS (The "Brain") ---
         types.Tool(
             name="generate_rca",
-            description="Perform RCA on a pipeline failure.",
+            description="🕵️‍♂️ THE DETECTIVE: Automatically analyze logs to find the Root Cause.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -131,10 +124,9 @@ async def list_tools() -> list[types.Tool]:
                 "required": ["dag_id", "run_id"],
             },
         ),
-        # Tool 8: Fix it - Rerun the pipeline if safe
         types.Tool(
             name="rerun_failed_pipeline",
-            description="Attempt to rerun a failed pipeline if safe.",
+            description="🚑 AUTO-HEAL: Attempt to fix and restart the pipeline (Checked by Policy).",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -144,23 +136,54 @@ async def list_tools() -> list[types.Tool]:
                 },
                 "required": ["dag_id", "run_id"],
             },
+        ),
+        
+        # --- DATA ANALYSIS TOOLS (Business Intelligence) ---
+        types.Tool(
+            name="read_notebook_code",
+            description="📖 READ LOGIC: Read Python/SQL code to understand Business Rules. PRIORITY: 1. `03_gold_analysis` (Look for `gold_sales_all`). 2. Use that logic.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "notebook_name": {"type": "string", "description": "Name of the notebook (e.g., 03_gold_analysis)"},
+                },
+                "required": ["notebook_name"],
+            },
+        ),
+        types.Tool(
+            name="read_local_data_sample",
+            description="👀 PEEK DATA: Read the first 50 rows of data to see column names.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "filename": {"type": "string", "description": "Filename to read (default: sales_data.csv)"},
+                    "limit": {"type": "integer", "description": "Number of rows to read (default: 50)"}
+                },
+            },
+        ),
+        types.Tool(
+            name="run_local_sql",
+            description="⚡ RUN ANALYSIS: Run SQL on the data. LOGIC: 1. Use user filters if asked. 2. Else, use Silver filters (COMPLETED/PENDING).",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "SQL Query to execute (SQLite syntax)."},
+                },
+                "required": ["query"],
+            },
         )
     ]
 
 # ==============================================================================
-# TOOL EXECUTION
-# When the AI asks to run a tool, this function runs it.
+# 🚀 EXECUTION ENGINE
+# When Claude picks a tool from the menu, we run the code here.
 # ==============================================================================
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
-    """
-    Handle tool execution requests from the AI.
-    It looks at the 'name' and calls the matching function in tools.py.
-    """
-    logger.info(f"Calling tool: {name} with args: {arguments}")
+    logger.info(f"Command Received: {name} | Args: {arguments}")
     
     try:
-        # Route the request to the correct function in tools.py
+        # Route the command to the right Python function
         if name == "airflow_get_dag_run":
             result = tools.airflow_get_dag_run(arguments["dag_id"], arguments["run_id"])
         elif name == "airflow_get_failed_tasks":
@@ -168,7 +191,6 @@ async def call_tool(name: str, arguments: Any) -> list[types.TextContent | types
         elif name == "airflow_get_task_log":
             result = tools.airflow_get_task_log(arguments["dag_id"], arguments["run_id"], arguments["task_id"])
         elif name == "airflow_extract_databricks_run_id":
-            # This is the new helper tool we added for production
             result = tools.airflow_extract_databricks_run_id(arguments["dag_id"], arguments["run_id"], arguments["task_id"])
         elif name == "dbx_get_run_output":
             result = tools.dbx_get_run_output(int(arguments["run_id"]))
@@ -178,22 +200,27 @@ async def call_tool(name: str, arguments: Any) -> list[types.TextContent | types
             result = tools.generate_rca(arguments["dag_id"], arguments["run_id"])
         elif name == "rerun_failed_pipeline":
             result = tools.rerun_failed_pipeline(arguments["dag_id"], arguments["run_id"], arguments.get("mode", "failed_only"))
+        elif name == "read_notebook_code":
+            result = tools.read_notebook_code(arguments["notebook_name"])
+        elif name == "read_local_data_sample":
+            result = tools.read_local_data_sample(arguments.get("filename", "sales_data.csv"), arguments.get("limit", 50))
+        elif name == "run_local_sql":
+             result = tools.run_local_sql(arguments["query"])
         else:
             raise ValueError(f"Unknown tool: {name}")
 
-        # Return the result as text to the AI
+        # Send the result back to Claude
         return [types.TextContent(type="text", text=str(result))]
     
     except Exception as e:
-        logger.error(f"Error executing tool {name}: {e}")
+        logger.error(f"Error running {name}: {e}")
         return [types.TextContent(type="text", text=f"Error: {str(e)}")]
 
 # ==============================================================================
-# MAIN LOOP
-# This keeps the server running and listening for commands.
+# 🔄 MAIN LISTENER
+# Keep the server open and waiting for requests.
 # ==============================================================================
 async def main():
-    # Use Standard Input/Output (stdio) to communicate with Claude
     async with stdio_server() as (read, write):
         await app.run(read, write, app.create_initialization_options())
 
