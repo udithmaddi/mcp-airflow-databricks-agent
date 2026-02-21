@@ -69,22 +69,53 @@ This MCP Server exposes Airflow + Databricks operations as **tools** so that a G
 ## Project Structure
 ```text
 MCP_Server/
-│── README.md                  # Documentation
-│── requirements.txt           # Dependencies
-│── .env.template              # Environment variables template
-│── .gitignore                 # Ignore .env, .venv, cache folders
-│── RUN_INSTRUCTIONS.md        # Run guide (optional)
-│── MASTER_COMMAND_LOG.md      # Notes / command history (optional)
 │
-│── server.py                  # Starts MCP server
-│── tools.py                   # MCP tool definitions
-│── airflow_client.py          # Airflow REST API wrapper
-│── databricks_client.py       # Databricks Jobs API wrapper
-│── rca_engine.py              # RCA logic
-│── policy.py                  # Safe remediation guardrails
-│── demo.py                    # Demo script
-│── start.bat                  # Windows run shortcut
-│── gold_sales_daily.py        # Sample pipeline logic
+├── Databricks Notebooks/
+│   ├── 01_bronze_ingest.py
+│   ├── 02_silver_transform.py
+│   ├── 03_gold_analysis.py
+│
+├── MCP_Screenshot/
+│   ├── Screenshot 2026-01-15 143536...
+│   ├── Screenshot 2026-01-23 130625...
+│   ├── Screenshot 2026-01-23 130713...
+│   ├── Screenshot 2026-01-23 130802...
+│   ├── Screenshot 2026-01-23 130923...
+│   ├── Screenshot 2026-01-23 131001...
+│   ├── Screenshot 2026-01-23 153338...
+│   ├── Screenshot_01.png
+│   ├── Screenshot_02.png
+│   ├── Screenshot_03(1).png
+│   ├── Screenshot_03(2).png
+│   ├── Screenshot_03.png
+│   ├── Screenshot_04(1).png
+│   ├── Screenshot_04(2).png
+│   ├── Screenshot_04.png
+│   ├── Screenshot_05.png
+│   ├── Screenshot_06.png
+│   ├── Screenshot_07.png
+│
+├── core/
+│   ├── README.md
+│   ├── airflow_client.py
+│   ├── databricks_client.py
+│   ├── databricks_sales_pipeline.py
+│   ├── databricks_sales_pipeline_failure.py
+│   ├── demo.py
+│   ├── generate_data.py
+│   ├── policy.py
+│   ├── rca_engine.py
+│   ├── requirements.txt
+│   ├── sales_data.csv
+│   ├── server.py
+│   ├── start.bat
+│   ├── tools.py
+│
+├── .env.template
+├── .gitignore
+├── MASTER_COMMAND_LOG.md
+├── README.md
+└── RUN_INSTRUCTIONS.md
 ```
 ---
 ## Installation and Run
